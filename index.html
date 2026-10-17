@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #eef1f5; display: flex; justify-content: center; }
+  #app { width: 100%; max-width: 600px; height: 100vh; display: flex; flex-direction: column; background: #fff; }
+  header { padding: 12px 16px; background: #4f46e5; color: #fff; font-weight: 600; }
+  #messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; background: #e5e7eb; word-wrap: break-word; }
+  .msg.me { align-self: flex-end; background: #4f46e5; color: #fff; }
+  .meta { font-size: 11px; opacity: .7; margin-bottom: 2px; }
+  form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #ddd; }
+  input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+  button { padding: 10px 16px; border: 0; border-radius: 8px; background: #4f46e5; color: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>Chat Room</header>
+  <div id="messages"></div>
+  <form id="form">
+    <input id="text" placeholder="Type a message..." autocomplete="off" maxlength="500" required>
+    <button>Send</button>
+  </form>
+</div>
+<script>
+  let user = localStorage.getItem('chat-user');
+  while (!user || !user.trim()) user = prompt('Choose a username:') || '';
+  user = user.trim().slice(0, 24);
+  localStorage.setItem('chat-user', user);
+
+  const box = document.getElementById('messages');
+  function add(m) {
+    const d = document.createElement('div');
+    d.className = 'msg' + (m.user === user ? ' me' : '');
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = m.user + ' · ' + new Date(m.time).toLocaleTimeString();
+    const body = document.createElement('div');
+    body.textContent = m.text;
+    d.append(meta, body);
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+  }
+  const es = new EventSource('/events');
+  es.addEventListener('history', (e) => JSON.parse(e.data).forEach(add));
+  es.onmessage = (e) => add(JSON.parse(e.data));
+
+  document.getElementById('form').onsubmit = async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('text');
+    const text = input.value;
+    input.value = '';
+    await fetch('/send', { method: 'POST', body: JSON.stringify({ user, text }) });
+  };
+</script>
+</body>
+</html>

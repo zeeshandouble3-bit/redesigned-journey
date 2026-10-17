@@ -1,0 +1,8 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "description": "Simple real-time chat app (no dependencies)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "license": "MIT"
+}
